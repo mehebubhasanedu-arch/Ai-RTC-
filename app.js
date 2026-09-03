@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // UI Connections matches index.html exactly
+    // UI Connections
     const terminalFeed = document.getElementById('terminal-feed');
     const terminalForm = document.getElementById('terminal-form');
     const queryInput = document.getElementById('query-input');
@@ -14,6 +14,36 @@ document.addEventListener('DOMContentLoaded', () => {
     const geminiInput = document.getElementById('gemini-key');
     const groqInput = document.getElementById('groq-key');
     const openRouterInput = document.getElementById('openrouter-key');
+
+    const tosModal = document.getElementById('tos-modal');
+    const acceptTosBtn = document.getElementById('accept-tos-btn');
+    const signatureInput = document.getElementById('signature-input');
+
+    // Boot Sequence: First-Visit Check with Signature Logic
+    if (!localStorage.getItem('aegis_tos_accepted')) {
+        tosModal.classList.remove('hidden');
+    }
+
+    // Monitor the signature input in real-time
+    signatureInput.addEventListener('input', (e) => {
+        if (e.target.value.trim().toUpperCase() === 'I ACCEPT') {
+            acceptTosBtn.disabled = false;
+            acceptTosBtn.textContent = 'INITIALIZE SYSTEM';
+            acceptTosBtn.style.background = 'var(--accent-green)';
+            acceptTosBtn.style.color = '#000';
+            acceptTosBtn.style.border = 'none';
+        } else {
+            acceptTosBtn.disabled = true;
+            acceptTosBtn.textContent = 'SYSTEM LOCKED';
+            acceptTosBtn.style.background = 'var(--bg-subtle)';
+        }
+    });
+
+    acceptTosBtn.addEventListener('click', () => {
+        localStorage.setItem('aegis_tos_accepted', 'true');
+        tosModal.classList.add('hidden');
+        appendLine('system', '[LEGAL] System access verified. Operator clearance granted.');
+    });
 
     // Boot Sequence: Load keys from memory
     geminiInput.value = localStorage.getItem('aegis_key_gemini') || '';
@@ -37,7 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
         geminiInput.value = '';
         groqInput.value = '';
         openRouterInput.value = '';
-        appendLine('error', '[CONFIG] Memory purged. All API keys erased.');
+        appendLine('error', '[CONFIG] Memory purged. All API keys and settings erased.');
     });
 
     // Query Execution & Routing
@@ -87,11 +117,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (provider === 'groq') {
             apiKey = localStorage.getItem('aegis_key_groq');
             url = 'https://api.groq.com/openai/v1/chat/completions';
-            model = 'llama3-8b-8192'; // Ultra-fast model
+            model = 'llama3-8b-8192'; 
         } else {
             apiKey = localStorage.getItem('aegis_key_openrouter');
             url = 'https://openrouter.ai/api/v1/chat/completions';
-            model = 'deepseek/deepseek-chat:free'; // Deep research model
+            model = 'deepseek/deepseek-chat:free';
         }
 
         if (!apiKey) return appendLine('error', `[AUTH ERROR] Missing ${provider.toUpperCase()} API key. Add it in ⚙ [AUTH CONFIG].`);
@@ -125,3 +155,4 @@ document.addEventListener('DOMContentLoaded', () => {
         terminalFeed.scrollTop = terminalFeed.scrollHeight;
     }
 });
+                
