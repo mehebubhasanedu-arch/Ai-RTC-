@@ -98,6 +98,30 @@
         </div>
     </div>
 
+    <!-- First-Visit Legal Disclaimer Modal -->
+    <div id="tos-modal" class="drawer-overlay hidden">
+        <div class="modal-content">
+            <h2 class="modal-title">SYSTEM ACCESS NOTICE</h2>
+            <div class="modal-body">
+                <p><strong>MIT License & Usage Agreement</strong></p>
+                <p>By accessing this terminal, you acknowledge that this software is provided "AS IS", without warranty of any kind. The creator assumes zero liability for any claims or damages arising from the use of this interface.</p>
+                
+                <p><strong>Experimental & Educational Use</strong></p>
+                <p>This program is an experimental application intended for educational purposes only. Do not use this system for financial decision-making, medical advice, or any other critical life operations.</p>
+                
+                <p><strong>Zero-Telemetry Protocol</strong></p>
+                <p>This is a Bring-Your-Own-Key (BYOK) architecture. Your API keys and queries are never logged, proxied, or stored on our servers.</p>
+            </div>
+
+            <div class="tos-signature">
+                <label for="signature-input">Type <strong>I ACCEPT</strong> to verify and unlock:</label>
+                <input type="text" id="signature-input" placeholder="Awaiting authorization..." autocomplete="off">
+            </div>
+
+            <button id="accept-tos-btn" class="btn-primary disabled" disabled style="width: 100%; margin-top: 15px;">SYSTEM LOCKED</button>
+        </div>
+    </div>
+
     <script src="app.js"></script>
 </body>
 </html>
