@@ -1,156 +1,127 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // DOM Elements
-    const modal = document.getElementById('disclaimer-modal');
-    const acceptCheckbox = document.getElementById('accept-checkbox');
-    const unlockBtn = document.getElementById('unlock-btn');
-    const appContainer = document.getElementById('app-container');
-    
-    const apiKeyInput = document.getElementById('api-key-input');
-    const saveKeyBtn = document.getElementById('save-key-btn');
-    const clearKeyBtn = document.getElementById('clear-key-btn');
-    const authStatus = document.getElementById('auth-status');
-    const errorMsg = document.getElementById('error-message');
-    
+    // UI Connections matches index.html exactly
+    const terminalFeed = document.getElementById('terminal-feed');
+    const terminalForm = document.getElementById('terminal-form');
     const queryInput = document.getElementById('query-input');
-    const submitBtn = document.getElementById('submit-query-btn');
-    const outputLog = document.getElementById('output-log');
+    const modelSelector = document.getElementById('model-selector');
+    
+    const configDrawer = document.getElementById('config-drawer');
+    const openConfigBtn = document.getElementById('open-config-btn');
+    const closeConfigBtn = document.getElementById('close-config-btn');
+    const saveKeysBtn = document.getElementById('save-keys-btn');
+    const purgeKeysBtn = document.getElementById('purge-keys-btn');
 
-    // Configure the target model version
-    const MODEL_NAME = 'gemini-3.8-flash';
+    const geminiInput = document.getElementById('gemini-key');
+    const groqInput = document.getElementById('groq-key');
+    const openRouterInput = document.getElementById('openrouter-key');
 
-    // 1. Disclaimer Modal Logic
-    acceptCheckbox.addEventListener('change', (e) => {
-        unlockBtn.disabled = !e.target.checked;
+    // Boot Sequence: Load keys from memory
+    geminiInput.value = localStorage.getItem('aegis_key_gemini') || '';
+    groqInput.value = localStorage.getItem('aegis_key_groq') || '';
+    openRouterInput.value = localStorage.getItem('aegis_key_openrouter') || '';
+
+    // UI Drawer Logic
+    openConfigBtn.addEventListener('click', () => configDrawer.classList.remove('hidden'));
+    closeConfigBtn.addEventListener('click', () => configDrawer.classList.add('hidden'));
+
+    saveKeysBtn.addEventListener('click', () => {
+        localStorage.setItem('aegis_key_gemini', geminiInput.value.trim());
+        localStorage.setItem('aegis_key_groq', groqInput.value.trim());
+        localStorage.setItem('aegis_key_openrouter', openRouterInput.value.trim());
+        appendLine('system', '[CONFIG] Credentials verified and locked into local storage.');
+        configDrawer.classList.add('hidden');
     });
 
-    unlockBtn.addEventListener('click', () => {
-        modal.classList.add('hidden');
-        appContainer.classList.remove('hidden');
-        checkExistingKey();
+    purgeKeysBtn.addEventListener('click', () => {
+        localStorage.clear();
+        geminiInput.value = '';
+        groqInput.value = '';
+        openRouterInput.value = '';
+        appendLine('error', '[CONFIG] Memory purged. All API keys erased.');
     });
 
-    // 2. Zero-Data Auth / LocalStorage Logic
-    function checkExistingKey() {
-        const storedKey = localStorage.getItem('gemini_api_key');
-        if (storedKey) {
-            apiKeyInput.value = storedKey;
-            setAuthStatus(true);
-        } else {
-            setAuthStatus(false);
-        }
-    }
-
-    function setAuthStatus(isAuthorized) {
-        if (isAuthorized) {
-            authStatus.textContent = 'AUTHORIZED';
-            authStatus.className = 'authorized';
-            hideError();
-        } else {
-            authStatus.textContent = 'UNAUTHORIZED';
-            authStatus.className = 'unauthorized';
-        }
-    }
-
-    function showError(message) {
-        errorMsg.textContent = message;
-        errorMsg.classList.remove('hidden');
-    }
-
-    function hideError() {
-        errorMsg.classList.add('hidden');
-        errorMsg.textContent = '';
-    }
-
-    saveKeyBtn.addEventListener('click', () => {
-        const key = apiKeyInput.value.trim();
-        if (key) {
-            localStorage.setItem('gemini_api_key', key);
-            setAuthStatus(true);
-        } else {
-            showError("API key cannot be empty. Please enter a valid key.");
-            setAuthStatus(false);
-        }
-    });
-
-    clearKeyBtn.addEventListener('click', () => {
-        localStorage.removeItem('gemini_api_key');
-        apiKeyInput.value = '';
-        setAuthStatus(false);
-        showError("API key cleared from local storage. Please re-enter to continue.");
-    });
-
-    // 3. Engine API Request Logic
-    function appendLog(role, text) {
-        const entry = document.createElement('div');
-        entry.classList.add('log-entry', role);
-        
-        let prefix = '';
-        if (role === 'user') prefix = '> [USER]: ';
-        if (role === 'model') prefix = '> [GEMINI]: ';
-        if (role === 'error') prefix = '> [ERROR]: ';
-
-        entry.textContent = prefix + text;
-        outputLog.appendChild(entry);
-        
-        // Auto-scroll to bottom
-        outputLog.parentElement.scrollTop = outputLog.parentElement.scrollHeight;
-    }
-
-    submitBtn.addEventListener('click', async () => {
+    // Query Execution & Routing
+    terminalForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
         const query = queryInput.value.trim();
-        const apiKey = localStorage.getItem('gemini_api_key');
-
-        // Security / Error Check
-        if (!apiKey) {
-            showError("API KEY MISSING: Please enter and save your Gemini API key in the settings above.");
-            appendLog('error', 'Execution halted. Missing API key.');
-            return;
-        }
-
         if (!query) return;
 
-        hideError();
+        const engine = modelSelector.value;
+        appendLine('user', `> [TARGET: ${engine.toUpperCase()}] ${query}`);
         queryInput.value = '';
-        appendLog('user', query);
+
+        if (engine === 'gemini') {
+            await executeGemini(query);
+        } else if (engine === 'groq') {
+            await executeOpenAICompatible(query, 'groq');
+        } else if (engine === 'openrouter') {
+            await executeOpenAICompatible(query, 'openrouter');
+        }
+    });
+
+    // Google Gemini API Protocol
+    async function executeGemini(prompt) {
+        const apiKey = localStorage.getItem('aegis_key_gemini');
+        if (!apiKey) return appendLine('error', '[AUTH ERROR] Missing Gemini API key. Add it in ⚙ [AUTH CONFIG].');
+
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
         
-        // UI Loading state
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'Processing...';
-
         try {
-            // Target the generativelanguage endpoint directly using fetch()
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${apiKey}`;
-            
-            const payload = {
-                contents: [{
-                    parts: [{ text: query }]
-                }]
-            };
-
             const response = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
             });
-
             const data = await response.json();
-
-            // Catch API-level errors (like an invalid key, or quota hit)
-            if (!response.ok) {
-                throw new Error(data.error?.message || `HTTP Error ${response.status}`);
-            }
-
-            // Extract the generated text from the REST payload
-            const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response generated.';
-            appendLog('model', generatedText);
-
-        } catch (error) {
-            console.error("API Fetch Error:", error);
-            showError(`REQUEST FAILED: ${error.message}. Please check your API key validity.`);
-            appendLog('error', `Execution failed: ${error.message}`);
-        } finally {
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'Execute Query';
+            if (!response.ok) throw new Error(data.error?.message || 'Access Denied by Google Cloud.');
+            appendLine('system', data.candidates[0].content.parts[0].text);
+        } catch (err) {
+            appendLine('error', `[EXECUTE FAILED] ${err.message}`);
         }
-    });
+    }
+
+    // Standard OpenAI Protocol (Used for Groq and OpenRouter)
+    async function executeOpenAICompatible(prompt, provider) {
+        let apiKey, url, model;
+
+        if (provider === 'groq') {
+            apiKey = localStorage.getItem('aegis_key_groq');
+            url = 'https://api.groq.com/openai/v1/chat/completions';
+            model = 'llama3-8b-8192'; // Ultra-fast model
+        } else {
+            apiKey = localStorage.getItem('aegis_key_openrouter');
+            url = 'https://openrouter.ai/api/v1/chat/completions';
+            model = 'deepseek/deepseek-chat:free'; // Deep research model
+        }
+
+        if (!apiKey) return appendLine('error', `[AUTH ERROR] Missing ${provider.toUpperCase()} API key. Add it in ⚙ [AUTH CONFIG].`);
+
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${apiKey}`
+                },
+                body: JSON.stringify({
+                    model: model,
+                    messages: [{ role: 'user', content: prompt }]
+                })
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error?.message || 'Upstream API Error.');
+            appendLine('system', data.choices[0].message.content);
+        } catch (err) {
+            appendLine('error', `[EXECUTE FAILED] ${err.message}`);
+        }
+    }
+
+    // CLI UI Appender
+    function appendLine(type, text) {
+        const line = document.createElement('div');
+        line.className = `terminal-line ${type}-line`;
+        line.innerHTML = text.replace(/\n/g, '<br>'); // Preserves formatting
+        terminalFeed.appendChild(line);
+        terminalFeed.scrollTop = terminalFeed.scrollHeight;
+    }
 });
