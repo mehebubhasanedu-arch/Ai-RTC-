@@ -1,0 +1,203 @@
+:root {
+    --bg-color: #0a0a0f;
+    --panel-bg: #14141e;
+    --text-primary: #a9b1d6;
+    --accent: #41a6b5;
+    --success: #9ece6a;
+    --error: #f7768e;
+    --border: #292e42;
+    --font-mono: 'Courier New', Courier, monospace;
+    --font-sans: system-ui, -apple-system, sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    line-height: 1.6;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+/* Modal UI */
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-overlay.hidden { display: none; }
+
+.modal-content {
+    background: var(--panel-bg);
+    padding: 2rem;
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    max-width: 450px;
+    text-align: center;
+}
+
+.modal-content h2 {
+    color: var(--accent);
+    margin-bottom: 1rem;
+    font-family: var(--font-mono);
+}
+
+.checkbox-container {
+    margin: 1.5rem 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+button {
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    border-radius: 2px;
+    transition: all 0.2s;
+}
+
+button:hover:not(:disabled) {
+    background: var(--accent);
+    color: var(--bg-color);
+}
+
+button:disabled {
+    border-color: var(--border);
+    color: var(--border);
+    cursor: not-allowed;
+}
+
+/* Main Application Layout */
+#app-container {
+    width: 100%;
+    max-width: 900px;
+    padding: 2rem;
+}
+
+#app-container.hidden { display: none; }
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 1rem;
+    margin-bottom: 2rem;
+    font-family: var(--font-mono);
+}
+
+header h1 {
+    font-size: 1.5rem;
+    color: var(--accent);
+}
+
+.status-indicator .unauthorized { color: var(--error); }
+.status-indicator .authorized { color: var(--success); }
+
+.panel {
+    background: var(--panel-bg);
+    border: 1px solid var(--border);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    border-radius: 4px;
+}
+
+.panel h2 {
+    font-family: var(--font-mono);
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+}
+
+.description {
+    font-size: 0.9rem;
+    color: #7aa2f7;
+    margin-bottom: 1rem;
+}
+
+/* Inputs & Forms */
+.input-group {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 0.5rem;
+}
+
+input[type="password"], textarea {
+    flex: 1;
+    background: var(--bg-color);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    padding: 0.5rem;
+    font-family: var(--font-mono);
+}
+
+input[type="password"]:focus, textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.help-link {
+    display: inline-block;
+    font-size: 0.8rem;
+    color: var(--accent);
+    text-decoration: none;
+    margin-top: 0.5rem;
+}
+
+.help-link:hover { text-decoration: underline; }
+
+.error-msg {
+    color: var(--error);
+    margin-top: 1rem;
+    font-size: 0.9rem;
+    padding: 0.5rem;
+    border-left: 3px solid var(--error);
+    background: rgba(247, 118, 142, 0.1);
+}
+
+.error-msg.hidden { display: none; }
+
+/* The Engine / Terminal display */
+.terminal-display {
+    background: var(--bg-color);
+    border: 1px solid var(--border);
+    height: 350px;
+    overflow-y: auto;
+    padding: 1rem;
+    font-family: var(--font-mono);
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+}
+
+.log-entry { margin-bottom: 1rem; white-space: pre-wrap; word-wrap: break-word; }
+.log-entry.system { color: #7aa2f7; }
+.log-entry.user { color: var(--success); }
+.log-entry.model { color: var(--text-primary); }
+.log-entry.error { color: var(--error); }
+
+.query-interface {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+textarea { resize: vertical; }
+
+#submit-query-btn { align-self: flex-end; }
