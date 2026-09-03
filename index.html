@@ -3,58 +3,99 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OSINT Research Terminal // Gemini Engine</title>
+    <title>Aegis // Multi-Engine Intelligence Terminal</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <!-- Disclaimer Modal -->
-    <div id="disclaimer-modal" class="modal-overlay">
-        <div class="modal-content">
-            <h2>System Access Notice</h2>
-            <p>By proceeding, you accept the MIT License terms and acknowledge the creator holds zero liability.</p>
-            <div class="checkbox-container">
-                <input type="checkbox" id="accept-checkbox">
-                <label for="accept-checkbox">I Accept</label>
-            </div>
-            <button id="unlock-btn" disabled>Unlock System</button>
+
+    <!-- HUD Header -->
+    <header class="hud-bar">
+        <div class="hud-left">
+            <span class="hud-indicator status-live"></span>
+            <span class="hud-title">AEGIS-CORE // OSINT WORKSPACE</span>
         </div>
-    </div>
+        <div class="hud-right">
+            <div class="select-wrapper">
+                <label for="model-selector">ENGINE:</label>
+                <select id="model-selector">
+                    <option value="gemini">Google Gemini 1.5 Flash</option>
+                    <option value="groq">Groq // Llama 3 (Ultra-Fast)</option>
+                    <option value="openrouter">OpenRouter // DeepSeek (Research)</option>
+                </select>
+            </div>
+            <button id="open-config-btn" class="hud-btn" title="Open Engine Settings">⚙ [AUTH CONFIG]</button>
+        </div>
+    </header>
 
-    <!-- Main Application -->
-    <div id="app-container" class="hidden">
-        <header>
-            <h1>[ OSINT Research Terminal ]</h1>
-            <div class="status-indicator">Status: <span id="auth-status" class="unauthorized">UNAUTHORIZED</span></div>
-        </header>
+    <!-- Main Terminal Stream -->
+    <main class="terminal-container">
+        <div id="terminal-feed" class="terminal-feed">
+            <div class="terminal-line system-line">
+                <span class="tag">[SYSTEM]</span> Aegis Zero-Trust Terminal initialized. No telemetry logged.
+            </div>
+            <div class="terminal-line info-line">
+                <span class="tag">[NOTICE]</span> Bring Your Own Key (BYOK) architecture active. You must supply your own API key to query the models.
+            </div>
+            <div class="terminal-line info-line">
+                <span class="tag">[SUPPORTED MODELS]</span> 
+                <br> - <b>Google Gemini:</b> Standard OSINT and general research.
+                <br> - <b>Groq (Llama 3):</b> Zero-cost, ultra-fast generation. Best for non-technical users.
+                <br> - <b>OpenRouter (DeepSeek):</b> Zero-cost tier available. Deep technical analysis.
+            </div>
+            <div class="terminal-line info-line">
+                <span class="tag">[ACTION]</span> Click ⚙ [AUTH CONFIG] in the top right to load your keys.
+            </div>
+        </div>
 
-        <main>
-            <!-- Zero-Data Auth Settings -->
-            <section class="auth-section panel">
-                <h2>Zero-Data Auth (BYOK)</h2>
-                <p class="description">Enter your Google Gemini API key below. It will be stored strictly in your browser's local storage and nowhere else.</p>
-                <div class="input-group">
-                    <input type="password" id="api-key-input" placeholder="Enter API Key...">
-                    <button id="save-key-btn">Save Key</button>
-                    <button id="clear-key-btn">Clear</button>
-                </div>
-                <a href="https://aistudio.google.com/app/apikey" target="_blank" class="help-link">Get your free Gemini API key here.</a>
-                <div id="error-message" class="error-msg hidden"></div>
-            </section>
+        <!-- Sticky CLI Input Bar -->
+        <form id="terminal-form" class="cli-bar">
+            <span class="cli-prompt">operator@aegis-mesh:~$</span>
+            <input 
+                type="text" 
+                id="query-input" 
+                placeholder="Enter OSINT target or research query..." 
+                autocomplete="off" 
+                spellcheck="false"
+                required
+            />
+            <button type="submit" id="execute-btn" class="cli-btn">EXECUTE</button>
+        </form>
+    </main>
 
-            <!-- The Engine -->
-            <section class="engine-section panel">
-                <h2>The Engine</h2>
-                <div class="terminal-display">
-                    <div id="output-log" class="output-log">
-                        <div class="log-entry system">> System initialized. Awaiting user input.</div>
-                    </div>
-                </div>
-                <div class="query-interface">
-                    <textarea id="query-input" placeholder="Enter your research query here..." rows="3"></textarea>
-                    <button id="submit-query-btn">Execute Query</button>
-                </div>
-            </section>
-        </main>
+    <!-- Settings Slide-out Drawer -->
+    <div id="config-drawer" class="drawer-overlay hidden">
+        <div class="drawer-content">
+            <div class="drawer-header">
+                <h3>// AUTHENTICATION KEYS</h3>
+                <button id="close-config-btn" class="close-btn">&times;</button>
+            </div>
+            <p class="drawer-desc">
+                Keys are stored securely in your browser's local memory. Use the engine dropdown to switch between models dynamically.
+            </p>
+
+            <div class="auth-group">
+                <label for="gemini-key">Google Gemini API Key</label>
+                <input type="password" id="gemini-key" placeholder="AIzaSy..." />
+            </div>
+
+            <div class="auth-group">
+                <label for="groq-key">Groq API Key (Llama 3)</label>
+                <input type="password" id="groq-key" placeholder="gsk_..." />
+            </div>
+
+            <div class="auth-group">
+                <label for="openrouter-key">OpenRouter API Key (DeepSeek)</label>
+                <input type="password" id="openrouter-key" placeholder="sk-or-v1-..." />
+            </div>
+
+            <div class="drawer-actions">
+                <button id="save-keys-btn" class="btn-primary">SAVE CREDENTIALS</button>
+                <button id="purge-keys-btn" class="btn-danger">PURGE ALL</button>
+            </div>
+        </div>
     </div>
 
     <script src="app.js"></script>
