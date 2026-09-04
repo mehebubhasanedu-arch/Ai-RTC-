@@ -160,8 +160,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             apiKey = localStorage.getItem('aegis_key_openrouter');
             url = 'https://openrouter.ai/api/v1/chat/completions';
-            model = 'deepseek/deepseek-chat:free';
-        }
+            ​model = 'openrouter/free';
 
         if (!apiKey) {
             appendLine('error', `[AUTH ERROR] Missing ${provider.toUpperCase()} API key. Add it in ⚙ [AUTH CONFIG].`);
