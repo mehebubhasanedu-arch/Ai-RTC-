@@ -127,8 +127,8 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-        
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+
         try {
             appendLine('system', '[SENSOR] Activating Google Live Search grounding...');
             const response = await fetch(url, {
