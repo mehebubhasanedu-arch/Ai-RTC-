@@ -138,7 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (provider === 'groq') {
             apiKey = localStorage.getItem('aegis_key_groq');
             url = 'https://api.groq.com/openai/v1/chat/completions';
-            model = 'llama-3.3-70b-versatile'; 
+            model = 'llama-3.1-8b-instant';
         } else {
             apiKey = localStorage.getItem('aegis_key_openrouter');
             url = 'https://openrouter.ai/api/v1/chat/completions';
