@@ -70,6 +70,23 @@ document.addEventListener('DOMContentLoaded', () => {
         appendLine('error', '[CONFIG] Memory purged. All API keys and settings erased.');
     });
 
+    // Real-Time Open-Source Sensor (Free Wikipedia Live Fetcher)
+    async function fetchLiveContext(query) {
+        try {
+            const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&utf8=&format=json&origin=*`;
+            const response = await fetch(searchUrl);
+            const data = await response.json();
+            
+            if (data.query && data.query.search && data.query.search.length > 0) {
+                const snippet = data.query.search[0].snippet.replace(/(<([^>]+)>)/gi, "");
+                return `[LIVE SYSTEM SENSOR: Wikipedia reference node reports: "${snippet}"]`;
+            }
+            return "[LIVE SYSTEM SENSOR: No real-time reference data found for this specific query.]";
+        } catch (e) {
+            return "[LIVE SYSTEM SENSOR: Connection to open data nodes failed.]";
+        }
+    }
+
     // Query Execution & Routing
     terminalForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -89,7 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Google Gemini API Protocol
+    // Google Gemini API Protocol (with Live Google Search Grounding)
     async function executeGemini(prompt) {
         const apiKey = localStorage.getItem('aegis_key_gemini');
         if (!apiKey) return appendLine('error', '[AUTH ERROR] Missing Gemini API key. Add it in ⚙ [AUTH CONFIG].');
@@ -97,10 +114,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
         
         try {
+            appendLine('system', '[SENSOR] Activating Google Live Search grounding...');
             const response = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                body: JSON.stringify({ 
+                    contents: [{ parts: [{ text: prompt }] }],
+                    tools: [{ googleSearch: {} }]
+                })
             });
             const data = await response.json();
             if (!response.ok) throw new Error(data.error?.message || 'Access Denied by Google Cloud.');
@@ -110,14 +131,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Standard OpenAI Protocol (Used for Groq and OpenRouter)
+    // Standard OpenAI Protocol (Used for Groq and OpenRouter with Live Sensor Data Chaining)
     async function executeOpenAICompatible(prompt, provider) {
         let apiKey, url, model;
 
         if (provider === 'groq') {
             apiKey = localStorage.getItem('aegis_key_groq');
             url = 'https://api.groq.com/openai/v1/chat/completions';
-            model = 'llama3-8b-8192'; 
+            model = 'llama-3.3-70b-versatile'; 
         } else {
             apiKey = localStorage.getItem('aegis_key_openrouter');
             url = 'https://openrouter.ai/api/v1/chat/completions';
@@ -127,6 +148,16 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!apiKey) return appendLine('error', `[AUTH ERROR] Missing ${provider.toUpperCase()} API key. Add it in ⚙ [AUTH CONFIG].`);
 
         try {
+            appendLine('system', '[SENSOR] Pulling real-time context from trusted open-source nodes...');
+            const liveContext = await fetchLiveContext(prompt);
+            
+            const enhancedPrompt = `
+You are an Aegis Intelligence Terminal. Use the following real-time context to help answer the user query accurately and concisely.
+${liveContext}
+
+User Query: ${prompt}
+`;
+
             const response = await fetch(url, {
                 method: 'POST',
                 headers: {
@@ -135,7 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 },
                 body: JSON.stringify({
                     model: model,
-                    messages: [{ role: 'user', content: prompt }]
+                    messages: [{ role: 'user', content: enhancedPrompt }]
                 })
             });
             const data = await response.json();
@@ -150,9 +181,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function appendLine(type, text) {
         const line = document.createElement('div');
         line.className = `terminal-line ${type}-line`;
-        line.innerHTML = text.replace(/\n/g, '<br>'); // Preserves formatting
+        line.innerHTML = text.replace(/\n/g, '<br>');
         terminalFeed.appendChild(line);
         terminalFeed.scrollTop = terminalFeed.scrollHeight;
     }
 });
-                
