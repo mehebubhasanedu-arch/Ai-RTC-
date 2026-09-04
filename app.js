@@ -46,12 +46,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 3. Load Cached Keys (DEFENSIVE CHECKS ADDED)
+    // 3. Load Cached Keys
     if (geminiInput) geminiInput.value = localStorage.getItem('aegis_key_gemini') || '';
     if (groqInput) groqInput.value = localStorage.getItem('aegis_key_groq') || '';
     if (openRouterInput) openRouterInput.value = localStorage.getItem('aegis_key_openrouter') || '';
 
-    // 4. Configuration Drawer Controls (DEFENSIVE CHECKS ADDED)
+    // 4. Configuration Drawer Controls
     if (openConfigBtn && configDrawer) {
         openConfigBtn.addEventListener('click', () => configDrawer.classList.remove('hidden'));
     }
@@ -156,11 +156,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (provider === 'groq') {
             apiKey = localStorage.getItem('aegis_key_groq');
             url = 'https://api.groq.com/openai/v1/chat/completions';
-            model = 'llama-3.1-8b-instant';
+            model = 'llama3-8b-8192'; // <--- FIXED GROQ MODEL
         } else {
             apiKey = localStorage.getItem('aegis_key_openrouter');
             url = 'https://openrouter.ai/api/v1/chat/completions';
-            ​model = 'openrouter/free';
+            model = 'openrouter/free'; // <--- FIXED OPENROUTER MODEL
+        }
 
         if (!apiKey) {
             appendLine('error', `[AUTH ERROR] Missing ${provider.toUpperCase()} API key. Add it in ⚙ [AUTH CONFIG].`);
@@ -207,4 +208,3 @@ User Query: ${prompt}
         terminalFeed.scrollTop = terminalFeed.scrollHeight;
     }
 });
-                                                         
