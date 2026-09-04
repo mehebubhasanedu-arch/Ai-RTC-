@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // UI Connections
+    // 1. UI Elements Mapping
     const terminalFeed = document.getElementById('terminal-feed');
     const terminalForm = document.getElementById('terminal-form');
     const queryInput = document.getElementById('query-input');
@@ -19,58 +19,68 @@ document.addEventListener('DOMContentLoaded', () => {
     const acceptTosBtn = document.getElementById('accept-tos-btn');
     const signatureInput = document.getElementById('signature-input');
 
-    // Boot Sequence: First-Visit Check with Signature Logic
-    if (!localStorage.getItem('aegis_tos_accepted')) {
+    // 2. Legal / TOS Gateway Initialization (DEFENSIVE CHECK ADDED)
+    if (tosModal && !localStorage.getItem('aegis_tos_accepted')) {
         tosModal.classList.remove('hidden');
     }
 
-    // Monitor the signature input in real-time
-    signatureInput.addEventListener('input', (e) => {
-        if (e.target.value.trim().toUpperCase() === 'I ACCEPT') {
-            acceptTosBtn.disabled = false;
-            acceptTosBtn.textContent = 'INITIALIZE SYSTEM';
-            acceptTosBtn.style.background = 'var(--accent-green)';
-            acceptTosBtn.style.color = '#000';
-            acceptTosBtn.style.border = 'none';
-        } else {
-            acceptTosBtn.disabled = true;
-            acceptTosBtn.textContent = 'SYSTEM LOCKED';
-            acceptTosBtn.style.background = 'var(--bg-subtle)';
-        }
-    });
+    if (signatureInput && acceptTosBtn) {
+        signatureInput.addEventListener('input', (e) => {
+            if (e.target.value.trim().toUpperCase() === 'I ACCEPT') {
+                acceptTosBtn.disabled = false;
+                acceptTosBtn.textContent = 'INITIALIZE SYSTEM';
+                acceptTosBtn.style.background = 'var(--accent-green)';
+                acceptTosBtn.style.color = '#000';
+                acceptTosBtn.style.border = 'none';
+            } else {
+                acceptTosBtn.disabled = true;
+                acceptTosBtn.textContent = 'SYSTEM LOCKED';
+                acceptTosBtn.style.background = 'var(--bg-subtle)';
+            }
+        });
 
-    acceptTosBtn.addEventListener('click', () => {
-        localStorage.setItem('aegis_tos_accepted', 'true');
-        tosModal.classList.add('hidden');
-        appendLine('system', '[LEGAL] System access verified. Operator clearance granted.');
-    });
+        acceptTosBtn.addEventListener('click', () => {
+            localStorage.setItem('aegis_tos_accepted', 'true');
+            tosModal.classList.add('hidden');
+            appendLine('system', '[LEGAL] System access verified. Operator clearance granted.');
+        });
+    }
 
-    // Boot Sequence: Load keys from memory
-    geminiInput.value = localStorage.getItem('aegis_key_gemini') || '';
-    groqInput.value = localStorage.getItem('aegis_key_groq') || '';
-    openRouterInput.value = localStorage.getItem('aegis_key_openrouter') || '';
+    // 3. Load Cached Keys (DEFENSIVE CHECKS ADDED)
+    if (geminiInput) geminiInput.value = localStorage.getItem('aegis_key_gemini') || '';
+    if (groqInput) groqInput.value = localStorage.getItem('aegis_key_groq') || '';
+    if (openRouterInput) openRouterInput.value = localStorage.getItem('aegis_key_openrouter') || '';
 
-    // UI Drawer Logic
-    openConfigBtn.addEventListener('click', () => configDrawer.classList.remove('hidden'));
-    closeConfigBtn.addEventListener('click', () => configDrawer.classList.add('hidden'));
+    // 4. Configuration Drawer Controls (DEFENSIVE CHECKS ADDED)
+    if (openConfigBtn && configDrawer) {
+        openConfigBtn.addEventListener('click', () => configDrawer.classList.remove('hidden'));
+    }
 
-    saveKeysBtn.addEventListener('click', () => {
-        localStorage.setItem('aegis_key_gemini', geminiInput.value.trim());
-        localStorage.setItem('aegis_key_groq', groqInput.value.trim());
-        localStorage.setItem('aegis_key_openrouter', openRouterInput.value.trim());
-        appendLine('system', '[CONFIG] Credentials verified and locked into local storage.');
-        configDrawer.classList.add('hidden');
-    });
+    if (closeConfigBtn && configDrawer) {
+        closeConfigBtn.addEventListener('click', () => configDrawer.classList.add('hidden'));
+    }
 
-    purgeKeysBtn.addEventListener('click', () => {
-        localStorage.clear();
-        geminiInput.value = '';
-        groqInput.value = '';
-        openRouterInput.value = '';
-        appendLine('error', '[CONFIG] Memory purged. All API keys and settings erased.');
-    });
+    if (saveKeysBtn) {
+        saveKeysBtn.addEventListener('click', () => {
+            if (geminiInput) localStorage.setItem('aegis_key_gemini', geminiInput.value.trim());
+            if (groqInput) localStorage.setItem('aegis_key_groq', groqInput.value.trim());
+            if (openRouterInput) localStorage.setItem('aegis_key_openrouter', openRouterInput.value.trim());
+            appendLine('system', '[CONFIG] Credentials verified and locked into local storage.');
+            if (configDrawer) configDrawer.classList.add('hidden');
+        });
+    }
 
-    // Real-Time Open-Source Sensor (Free Wikipedia Live Fetcher)
+    if (purgeKeysBtn) {
+        purgeKeysBtn.addEventListener('click', () => {
+            localStorage.clear();
+            if (geminiInput) geminiInput.value = '';
+            if (groqInput) groqInput.value = '';
+            if (openRouterInput) openRouterInput.value = '';
+            appendLine('error', '[CONFIG] Memory purged. All keys and local session flags cleared.');
+        });
+    }
+
+    // 5. Open-Source Real-Time Sensor (Wikipedia API)
     async function fetchLiveContext(query) {
         try {
             const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&utf8=&format=json&origin=*`;
@@ -78,38 +88,44 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
             
             if (data.query && data.query.search && data.query.search.length > 0) {
-                const snippet = data.query.search[0].snippet.replace(/(<([^>]+)>)/gi, "");
+                const snippet = data.query.search[0].snippet.replace(/(<([^>]+)>)/gi, '');
                 return `[LIVE SYSTEM SENSOR: Wikipedia reference node reports: "${snippet}"]`;
             }
-            return "[LIVE SYSTEM SENSOR: No real-time reference data found for this specific query.]";
+            return '[LIVE SYSTEM SENSOR: No real-time reference data found for this specific query.]';
         } catch (e) {
-            return "[LIVE SYSTEM SENSOR: Connection to open data nodes failed.]";
+            return '[LIVE SYSTEM SENSOR: Connection to open data nodes failed.]';
         }
     }
 
-    // Query Execution & Routing
-    terminalForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const query = queryInput.value.trim();
-        if (!query) return;
+    // 6. Command Line Submission Handler
+    if (terminalForm) {
+        terminalForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!queryInput) return;
+            const query = queryInput.value.trim();
+            if (!query) return;
 
-        const engine = modelSelector.value;
-        appendLine('user', `> [TARGET: ${engine.toUpperCase()}] ${query}`);
-        queryInput.value = '';
+            const engine = modelSelector ? modelSelector.value : 'gemini';
+            appendLine('user', `> [TARGET: ${engine.toUpperCase()}] ${query}`);
+            queryInput.value = '';
 
-        if (engine === 'gemini') {
-            await executeGemini(query);
-        } else if (engine === 'groq') {
-            await executeOpenAICompatible(query, 'groq');
-        } else if (engine === 'openrouter') {
-            await executeOpenAICompatible(query, 'openrouter');
-        }
-    });
+            if (engine === 'gemini') {
+                await executeGemini(query);
+            } else if (engine === 'groq') {
+                await executeOpenAICompatible(query, 'groq');
+            } else if (engine === 'openrouter') {
+                await executeOpenAICompatible(query, 'openrouter');
+            }
+        });
+    }
 
-    // Google Gemini API Protocol (with Live Google Search Grounding)
+    // 7. Google Gemini API Protocol
     async function executeGemini(prompt) {
         const apiKey = localStorage.getItem('aegis_key_gemini');
-        if (!apiKey) return appendLine('error', '[AUTH ERROR] Missing Gemini API key. Add it in ⚙ [AUTH CONFIG].');
+        if (!apiKey) {
+            appendLine('error', '[AUTH ERROR] Missing Gemini API key. Add it in ⚙ [AUTH CONFIG].');
+            return;
+        }
 
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
         
@@ -125,27 +141,32 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             const data = await response.json();
             if (!response.ok) throw new Error(data.error?.message || 'Access Denied by Google Cloud.');
-            appendLine('system', data.candidates[0].content.parts[0].text);
+            
+            const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || '[ERROR: Empty response]';
+            appendLine('system', reply);
         } catch (err) {
             appendLine('error', `[EXECUTE FAILED] ${err.message}`);
         }
     }
 
-    // Standard OpenAI Protocol (Used for Groq and OpenRouter with Live Sensor Data Chaining)
+    // 8. OpenAI-Compatible Protocol (Groq / OpenRouter)
     async function executeOpenAICompatible(prompt, provider) {
         let apiKey, url, model;
 
         if (provider === 'groq') {
             apiKey = localStorage.getItem('aegis_key_groq');
             url = 'https://api.groq.com/openai/v1/chat/completions';
-            ​model = 'llama-3.1-8b-instant';
+            model = 'llama-3.1-8b-instant';
         } else {
             apiKey = localStorage.getItem('aegis_key_openrouter');
             url = 'https://openrouter.ai/api/v1/chat/completions';
             model = 'deepseek/deepseek-chat:free';
         }
 
-        if (!apiKey) return appendLine('error', `[AUTH ERROR] Missing ${provider.toUpperCase()} API key. Add it in ⚙ [AUTH CONFIG].`);
+        if (!apiKey) {
+            appendLine('error', `[AUTH ERROR] Missing ${provider.toUpperCase()} API key. Add it in ⚙ [AUTH CONFIG].`);
+            return;
+        }
 
         try {
             appendLine('system', '[SENSOR] Pulling real-time context from trusted open-source nodes...');
@@ -177,8 +198,9 @@ User Query: ${prompt}
         }
     }
 
-    // CLI UI Appender
+    // 9. Output Renderer
     function appendLine(type, text) {
+        if (!terminalFeed) return;
         const line = document.createElement('div');
         line.className = `terminal-line ${type}-line`;
         line.innerHTML = text.replace(/\n/g, '<br>');
@@ -186,3 +208,4 @@ User Query: ${prompt}
         terminalFeed.scrollTop = terminalFeed.scrollHeight;
     }
 });
+                                                         
